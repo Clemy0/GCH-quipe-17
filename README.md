@@ -1,1 +1,1 @@
-# GCH-quipe-17
+# GCH-equipe-17
