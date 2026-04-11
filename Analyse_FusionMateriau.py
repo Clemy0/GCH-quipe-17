@@ -63,7 +63,7 @@ plt.plot(np.linspace(0,1,100),np.zeros(100), color = "black", linestyle = "dotte
 plt.xlabel(r'$\beta$')
 plt.ylabel(r'f($\beta$)')
 
-
+#Test
 plt.xlim(left = -0.25)
 plt.grid()
 plt.legend()
@@ -98,7 +98,7 @@ plt.ylabel('x_front')
 plt.title('Évolution du front de fusion')
 plt.grid()
 plt.legend()
-#
+#Stabilité du schéma d'Euler explicite, on voit que pour S = 0.6 > 0.5, la température devient instable à t=50s alors que pour S = 0.5, la température est stable à t=50s
 plt.figure(5)
 plt.plot(x, T_Euler_explicite[len(t)-1,:], label='S = 0.5, T(x) stable à t=50s')
 plt.plot(x_instable, T_Euler_explicite_instable[len(t_instable)-1,:], label='S = 0.6 > 0.5, T(x) à t=50s')
