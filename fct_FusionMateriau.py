@@ -258,3 +258,62 @@ def front_evolution(x, t, T, prm):
         x_front_numerique[i] = x[i_front]
         x_front_analytique[i] = 2*beta*np.sqrt(alpha*t[i])
     return x_front_analytique, x_front_numerique
+
+#------------ Euler implicite essai Aurélie --------------------
+def euler_implicite(prm): 
+    """Fonction qui utilise la méthode d'Euler implicite pour résoudre l'équation de la fusion d'un matériau en fonction du temps et de x
+    Entrées:
+        - prm : Objet class parametres()
+                - L         : Longueur
+                - T_l       : Température du liquidus(état liquide)
+                - T_s       : Température de solidus(état solide)
+                - T_c       : Température imposée
+                - k         : conductivité thermique
+                - delta_H   : Différence d'enthalpie entre les états solide et liquide
+                - rho       : Masse volumique
+                - Beta      : Paramètre [beta_min, beta_max]
+                - C_pl      : Capacité calorifique à phase liquide               
+                - N         : Nombre de noeuds
+                - t         : Temps total de la simulation
+     Sorties:
+        - t : Array de temps de taille (N) 1D 
+        - x : Array de position de taille (N) 1D
+        - T : Array de température de taille (N,N) 2D, où T[i,j] est la température au temps t[i] et à la position j
+        
+        """
+#Discrétisation spatiale
+    x=np.linspace(0,prm.L,prm.N)
+    dx= x[1]-x[0]
+# est ce que l'on garde le meme pas de temps que pour l'explicite pour pouvoir comparer 
+# meme si implicite est stable 
+    Stability_value = prm.rho * prm.C_pl / (2 * prm.k)
+    dt = 0.99*(Stability_value*dx**2)
+    Nt = int(prm.t/dt)
+    t = np.linspace(0, prm.t, Nt)
+
+    Cpsl=Cp_sl(prm) 
+    T = np.empty((Nt, prm.N))
+    def Ceff(T):
+        if T< prm.T_l: 
+            return prm.Cpsl
+        else: 
+            return prm.C_pl
+    
+        
+#fonction pour calculer le résidus 
+    def residus (T): 
+        J[j, j+1] = -prm.k / dx**2  
+    return J 
+# Boucle temporelle 
+for i in range (Nt): 
+    if i==0: 
+        T[i,:] = prm.T_s
+        continue 
+    T_old=T[i-1,:].copy()
+    T1=T_old.copy 
+
+    for k in range (max_iter): 
+        F=residus(T)
+        
+
+                  
