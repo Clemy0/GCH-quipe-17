@@ -177,7 +177,7 @@ def func_T(x,t, prm):
 
 
 
-def Euler_explicite(prm): 
+def Euler_explicite(prm, stability_value = 0.5): 
     """Fonction qui utilise la méthode d'Euler explicite pour résoudre l'équation de la fusion d'un matériau en fonction du temps et de x
     Entrées:
         - prm : Objet class parametres()
@@ -198,11 +198,10 @@ def Euler_explicite(prm):
         - T : Array de température de taille (N,N) 2D, où T[i,j] est la température au temps t[i] et à la position j
         
         """
-    Stability_value = prm.rho*prm.C_pl/(2*prm.k)
     x = np.linspace(0, prm.L, prm.N)
     dx = x[1]- x[0]
-
-    dt = 0.99*(Stability_value*dx**2)
+    
+    dt = (stability_value*prm.C_pl*prm.rho*dx**2)/prm.k
     Nt = int(prm.t/dt)
     t = np.linspace(0, prm.t, Nt)
     

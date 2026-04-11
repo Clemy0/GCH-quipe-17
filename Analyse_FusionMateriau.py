@@ -4,16 +4,16 @@ from fct_FusionMateriau import *
 
 class parametres():
     L = 1                                           # Longueur
-    T_l = 0.000000001                                      # Température du liquidus(état liquide)
+    T_l = 0.01                                      # Température du liquidus(état liquide)
     T_s = 0                                         # Température de solidus(état solide)
     T_c = 1                                         # Température imposée
     k = 10                                          # conductivité thermique
-    delta_H = 10                                 # Différence d'enthalpie entre les états solide et liquide
+    delta_H = 80                                 # Différence d'enthalpie entre les états solide et liquide
     rho = 1000                                      # Masse volumique
     Beta = [0,1]                                    # Paramètre [beta_min, beta_max]
     C_pl = 1                                        # Capacité calorifique à phase liquide
-    N = 100                                         # Nombre de noeuds
-    t = 465                                        # Temps total de la simulation
+    N = 50                                         # Nombre de noeuds
+    t = 50                                        # Temps total de la simulation
 
 class parametres1(parametres): #Ste = 0.1
     delta_H = 10
@@ -32,10 +32,10 @@ prm2 = parametres2()
 prm3 = parametre3()
 
 beta, f = funcbetaArray(prm)
-
-
-
+beta_0 = bissection(prm.Beta[0],prm.Beta[1],prm)
+print(beta_0)
 t,x,T_Euler_explicite = Euler_explicite(prm)
+t_instable, x_instable, T_Euler_explicite_instable =  Euler_explicite(prm, 0.6) 
 T_euler_explicite_Ste01 = Euler_explicite(prm1)[2]
 T_euler_explicite_Ste001 = Euler_explicite(prm2)[2]
 T_euler_explicite_Ste0001 = Euler_explicite(prm3)[2]
@@ -46,10 +46,25 @@ x_front_analytique, x_front_numérique = front_evolution(x, t, T_Euler_explicite
 
 #Graphique pour déterminer l'intervalle de valeur initiale pour trouver beta avec la méthode bissection
 plt.figure(1)
-plt.plot(beta, f, label='f(beta)')
-plt.xlabel('beta')
-plt.ylabel('f(beta)')
-plt.title('Fonction f(beta)')
+plt.plot(beta, f, label= r'f($\beta$)')
+plt.plot(prm.Beta[0], funcbeta(prm.Beta[0],prm), linestyle = "None", marker = "o", color = "r", label = r"$\beta_1$")
+plt.text(prm.Beta[0], funcbeta(prm.Beta[0],prm), r"$\beta_1$", va = "bottom")
+plt.text(prm.Beta[0], funcbeta(prm.Beta[0],prm), rf"f($\beta_1$) = {funcbeta(prm.Beta[0],prm) :.2f}", ha = "right",  va = "top")
+
+plt.plot(beta_0, funcbeta(beta_0,prm), linestyle = "None", marker = "o", color = "black", label = r"$\beta_0$")
+plt.text(beta_0, funcbeta(beta_0,prm), r"$\beta_0$", va = "bottom")
+
+plt.plot(prm.Beta[1], funcbeta(prm.Beta[1],prm), linestyle = "None", marker = "o", color = "b", label = r"$\beta_2$")
+plt.text(prm.Beta[1], funcbeta(prm.Beta[1],prm), r"$\beta_2$", va = "bottom")
+plt.text(prm.Beta[1], funcbeta(prm.Beta[1],prm), rf"f($\beta_2$) = {funcbeta(prm.Beta[1],prm) :.2f}", ha = "right",  va = "top")
+
+
+plt.plot(np.linspace(0,1,100),np.zeros(100), color = "black", linestyle = "dotted")
+plt.xlabel(r'$\beta$')
+plt.ylabel(r'f($\beta$)')
+
+
+plt.xlim(left = -0.25)
 plt.grid()
 plt.legend()
 
@@ -81,6 +96,15 @@ plt.plot(t, x_front_numérique, label='Front de fusion numérique en fonction du
 plt.xlabel('t')
 plt.ylabel('x_front')
 plt.title('Évolution du front de fusion')
+plt.grid()
+plt.legend()
+#
+plt.figure(5)
+plt.plot(x, T_Euler_explicite[len(t)-1,:], label='S = 0.5, T(x) stable à t=50s')
+plt.plot(x_instable, T_Euler_explicite_instable[len(t_instable)-1,:], label='S = 0.6 > 0.5, T(x) à t=50s')
+plt.xlabel('x')
+plt.ylabel('T')
+plt.title('Température en fonction de la position pour différente valeur de stabilité')
 plt.grid()
 plt.legend()
 plt.show()
