@@ -224,6 +224,87 @@ def Euler_explicite(prm, stability_value = 0.5):
                     T[i,j] = (dt*(prm.k/prm.rho)*(T[i-1, j+1] - 2*T[i-1,j] + T[i-1, j-1])/dx**2)/prm.C_pl + T[i-1, j]
     return t, x, T
 
+#------------ Euler implicite essai Matthieu --------------------
+def Euler_implicite(prm):
+    """Fonction qui utilise la méthode d'Euler implicite pour résoudre 
+    l'équation de la fusion d'un matériau en fonction du temps et de x.
+    
+    Entrées:
+        - prm : Objet class parametres()
+                - L         : Longueur
+                - T_l       : Température du liquidus (état liquide)
+                - T_s       : Température du solidus (état solide)
+                - T_c       : Température imposée
+                - k         : Conductivité thermique
+                - delta_H   : Différence d'enthalpie entre solide et liquide
+                - rho       : Masse volumique
+                - Beta      : Paramètre [beta_min, beta_max]
+                - C_pl      : Capacité calorifique à phase liquide
+                - N         : Nombre de noeuds
+                - t         : Temps total de la simulation
+    Sorties:
+        - t   : Array de temps de taille (Nt) 1D
+        - x   : Array de position de taille (N) 1D
+        - T   : Array de température de taille (Nt, N) 2D
+    """
+    x  = np.linspace(0, prm.L, prm.N)
+    dx = x[1] - x[0]
+
+    dt = 0.99*(prm.rho*prm.C_pl / (2*prm.k))*dx**2
+    Nt = int(prm.t / dt) + 1
+    t = np.linspace(0, prm.t, Nt)
+
+    T = np.empty((Nt, prm.N))
+
+    for j in range(prm.N):
+        T[0, j] = prm.T_s
+
+    N_interieur = prm.N - 2
+
+    for i in range(1, Nt):
+
+        Cp = np.empty(N_interieur)
+        for j in range(N_interieur):
+            if T[i-1, j+1] < prm.T_l:
+                Cp[j] = C_psl(prm)
+            else:
+                Cp[j] = prm.C_pl
+
+        a = np.empty(N_interieur)
+        for j in range(N_interieur):
+            a[j] = prm.k*dt / (prm.rho*Cp[j]*dx**2)
+
+        diag_sup = np.empty(N_interieur)
+        diag_milieu = np.empty(N_interieur)        
+        diag_inf = np.empty(N_interieur)
+        B = np.empty(N_interieur)
+
+        for j in range(N_interieur):
+            diag_sup[j] = -a[j]
+            diag_milieu[j] = 1 + 2*a[j]            
+            diag_inf[j] = -a[j]
+            B[j] = T[i-1, j+1]
+
+        B[0] += a[0]*prm.T_c
+        B[N_interieur-1] += a[N_interieur-1]*prm.T_s
+
+        for j in range(1, N_interieur):
+            facteur = diag_inf[j] / diag_milieu[j-1]
+            diag_milieu[j] = diag_milieu[j] - facteur*diag_sup[j-1]
+            B[j] = B[j] - facteur*B[j-1]
+
+        T_interieur = np.empty(N_interieur)
+        T_interieur[N_interieur-1] = B[N_interieur-1] / diag_milieu[N_interieur-1]
+        for j in range(N_interieur-2, -1, -1):
+            T_interieur[j] = (B[j] - diag_sup[j]*T_interieur[j+1]) / diag_milieu[j]
+
+        T[i, 0]  = prm.T_c
+        T[i, -1] = prm.T_s
+        for j in range(N_interieur):
+            T[i, j+1] = T_interieur[j]
+
+    return t, x, T
+
 
 def front_evolution(x, t, T, prm):
     """Fonction qui calcule l'évolution du front de fusion en fonction du temps
