@@ -108,3 +108,35 @@ plt.title('Température en fonction de la position pour différente valeur de st
 plt.grid()
 plt.legend()
 plt.show()
+
+''' Plot pour les résidus 
+
+#résidu explicite
+plt.figure()
+plt.semilogy(t_exp[1:], res_exp, label="Euler explicite")
+plt.xlabel("temps")
+plt.ylabel("résidu")
+plt.title("Résidu du schéma explicite")
+plt.grid(True)
+plt.legend()
+
+#résidu implicite
+plt.figure()
+plt.semilogy(t_imp[1:], res_imp, label="Euler implicite")
+plt.xlabel("temps")
+plt.ylabel("résidu")
+plt.title("Résidu du schéma implicite")
+plt.grid(True)
+plt.legend()
+
+# Comparaison
+plt.figure()
+plt.semilogy(t_exp[1:], res_exp, label="Explicite")
+plt.semilogy(t_imp[1:], res_imp, label="Implicite")
+plt.xlabel("temps")
+plt.ylabel("résidu")
+plt.title("Comparaison des résidus")
+plt.grid(True)
+plt.legend()
+
+plt.show()'''
