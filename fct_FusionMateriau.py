@@ -382,19 +382,62 @@ def euler_implicite(prm):
     
         
 #fonction pour calculer le résidus 
-    def residus (T): 
-        J[j, j+1] = -prm.k / dx**2  
-    return J 
-# Boucle temporelle 
-for i in range (Nt): 
-    if i==0: 
-        T[i,:] = prm.T_s
-        continue 
-    T_old=T[i-1,:].copy()
-    T1=T_old.copy 
+#Setup du CP
+def cp_effectif_array(T_line, prm):
+    Cp = np.empty_like(T_line)
+    
+    for j in range(len(T_line)):
+        if T_line[j] < prm.T_l:
+            Cp[j] = C_psl(prm)
+        else:
+            Cp[j] = prm.C_pl
+            
+    return Cp
 
-    for k in range (max_iter): 
-        F=residus(T)
+
+
+
+def residus_explicite(t, x, T, prm):
+   
+    Nt, N = T.shape
+    dx = x[1] - x[0]
+    dt = t[1] - t[0]
+
+    R = np.zeros((Nt - 1, N - 2))
+
+    
+    for n in range(Nt - 1):
+        Cp_n = cp_effectif_array(T[n, :], prm)
         
+        '''Actual calculs avec formules'''
+        for j in range(1, N - 1):
+            diffusion_exp = (prm.k / (prm.rho * Cp_n[j])) * (T[n, j+1] - 2*T[n, j] + T[n, j-1]) / dx**2
+            derivee_temp = (T[n+1, j] - T[n, j]) / dt
+            R[n, j-1] = derivee_temp - diffusion_exp
 
+    norme_L2 = np.linalg.norm(R, axis=1)
+    return R, norme_L2
+
+
+
+
+def residus_implicite(t, x, T, prm):
+
+    Nt, N = T.shape
+    dx = x[1] - x[0]
+    dt = t[1] - t[0]
+
+    R = np.zeros((Nt - 1, N - 2))
+
+    for n in range(Nt - 1):
+        Cp_n = cp_effectif_array(T[n, :], prm)
+
+        '''Formules vues en cours'''
+        for j in range(1, N - 1):
+            diffusion_imp = (prm.k / (prm.rho * Cp_n[j])) * (T[n+1, j+1] - 2*T[n+1, j] + T[n+1, j-1]) / dx**2
+            derivee_temp = (T[n+1, j] - T[n, j]) / dt
+            R[n, j-1] = derivee_temp - diffusion_imp
+
+    norme_L2 = np.linalg.norm(R, axis=1)
+    return R, norme_L2
                   
