@@ -362,23 +362,67 @@ def euler_implicite(prm):
         - T : Array de température de taille (N,N) 2D, où T[i,j] est la température au temps t[i] et à la position j
         
         """
-#Discrétisation spatiale
-    x=np.linspace(0,prm.L,prm.N)
-    dx= x[1]-x[0]
-# est ce que l'on garde le meme pas de temps que pour l'explicite pour pouvoir comparer 
-# meme si implicite est stable 
+# Discrétisation spatiale
+    x = np.linspace(0, prm.L, prm.N)
+    dx = x[1] - x[0]
+
+    # Pas de temps (stable mais pas nécessaire en implicite)
     Stability_value = prm.rho * prm.C_pl / (2 * prm.k)
-    dt = 0.99*(Stability_value*dx**2)
-    Nt = int(prm.t/dt)
+    dt = 0.99 * Stability_value * dx**2
+    Nt = int(prm.t / dt)
     t = np.linspace(0, prm.t, Nt)
 
-    Cpsl=Cp_sl(prm) 
+    # Initialisation température
     T = np.empty((Nt, prm.N))
-    def Ceff(T):
-        if T< prm.T_l: 
-            return prm.Cpsl
-        else: 
-            return prm.C_pl
+    T[0, :] = prm.T_s
+    T[0, 0] = prm.T_c
+    T[0, -1] = prm.T_s
+
+    Nint = prm.N - 2  # nombre de noeuds intérieurs
+
+    # Boucle temporelle
+    for n in range(1, Nt):
+
+        T_old = T[n-1, :]
+
+        # Cp pogné au temps précédent
+        Cp = np.zeros(Nint)
+        for j in range(Nint):
+            if T_old[j+1] < prm.T_l:
+                Cp[j] = C_psl(prm)
+            else:
+                Cp[j] = prm.C_pl
+
+        # coefficient diffusion
+        a = prm.k * dt / (prm.rho * Cp * dx**2)
+
+        # Construction matrice A et vecteur b
+        A = np.zeros((Nint, Nint))
+        b = np.zeros(Nint)
+
+        for j in range(Nint):
+
+            A[j, j] = 1 + 2*a[j]
+
+            if j > 0:
+                A[j, j-1] = -a[j]
+
+            if j < Nint - 1:
+                A[j, j+1] = -a[j]
+
+            b[j] = T_old[j+1]
+
+        # Conditions limites
+        b[0] += a[0] * prm.T_c
+        b[-1] += a[-1] * prm.T_s
+
+        T_new_int = np.linalg.solve(A, b)
+
+        T[n, 0] = prm.T_c
+        T[n, -1] = prm.T_s
+        T[n, 1:-1] = T_new_int
+
+    return t, x, T
     
         
 #fonction pour calculer le résidus 
@@ -393,8 +437,6 @@ def cp_effectif_array(T_line, prm):
             Cp[j] = prm.C_pl
             
     return Cp
-
-
 
 
 def residus_explicite(t, x, T, prm):
@@ -412,13 +454,13 @@ def residus_explicite(t, x, T, prm):
         '''Actual calculs avec formules'''
         for j in range(1, N - 1):
             diffusion_exp = (prm.k / (prm.rho * Cp_n[j])) * (T[n, j+1] - 2*T[n, j] + T[n, j-1]) / dx**2
+
             derivee_temp = (T[n+1, j] - T[n, j]) / dt
+
             R[n, j-1] = derivee_temp - diffusion_exp
 
     norme_L2 = np.linalg.norm(R, axis=1)
     return R, norme_L2
-
-
 
 
 def residus_implicite(t, x, T, prm):
@@ -435,9 +477,11 @@ def residus_implicite(t, x, T, prm):
         '''Formules vues en cours'''
         for j in range(1, N - 1):
             diffusion_imp = (prm.k / (prm.rho * Cp_n[j])) * (T[n+1, j+1] - 2*T[n+1, j] + T[n+1, j-1]) / dx**2
+
             derivee_temp = (T[n+1, j] - T[n, j]) / dt
+
             R[n, j-1] = derivee_temp - diffusion_imp
 
     norme_L2 = np.linalg.norm(R, axis=1)
     return R, norme_L2
-                  
+        
