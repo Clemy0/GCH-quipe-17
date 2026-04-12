@@ -423,7 +423,8 @@ def euler_implicite(prm):
         T[n, 1:-1] = T_new_int
 
     return t, x, T
-    
+
+
         
 #fonction pour calculer le résidus 
 #Setup du CP
