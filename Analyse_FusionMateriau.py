@@ -109,10 +109,19 @@ plt.grid()
 plt.legend()
 plt.show()
 
-''' Plot pour les résidus 
+''' Plot pour les résidus '''
+# Solution explicite
+t_exp, x_exp, T_exp = Euler_explicite(prm)
+
+# Solution implicite
+t_imp, x_imp, T_imp = euler_implicite(prm)
+
+# Résidus
+R_exp, res_exp = residus_explicite(t_exp, x_exp, T_exp, prm)
+R_imp, res_imp = residus_implicite(t_imp, x_imp, T_imp, prm)
 
 #résidu explicite
-plt.figure()
+plt.figure(6)
 plt.semilogy(t_exp[1:], res_exp, label="Euler explicite")
 plt.xlabel("temps")
 plt.ylabel("résidu")
@@ -121,7 +130,7 @@ plt.grid(True)
 plt.legend()
 
 #résidu implicite
-plt.figure()
+plt.figure(7)
 plt.semilogy(t_imp[1:], res_imp, label="Euler implicite")
 plt.xlabel("temps")
 plt.ylabel("résidu")
@@ -130,7 +139,7 @@ plt.grid(True)
 plt.legend()
 
 # Comparaison
-plt.figure()
+plt.figure(8)
 plt.semilogy(t_exp[1:], res_exp, label="Explicite")
 plt.semilogy(t_imp[1:], res_imp, label="Implicite")
 plt.xlabel("temps")
@@ -139,4 +148,4 @@ plt.title("Comparaison des résidus")
 plt.grid(True)
 plt.legend()
 
-plt.show()'''
+plt.show()
