@@ -473,7 +473,7 @@ def residus_implicite(t, x, T, prm):
     R = np.zeros((Nt - 1, N - 2))
 
     for n in range(Nt - 1):
-        Cp_n = cp_effectif_array(T[n, :], prm)
+        Cp_n = cp_effectif_array(T[n+1, :], prm)
 
         '''Formules vues en cours'''
         for j in range(1, N - 1):
