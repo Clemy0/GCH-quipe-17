@@ -224,7 +224,6 @@ def Euler_explicite(prm, stability_value = 0.5):
                     T[i,j] = (dt*(prm.k/prm.rho)*(T[i-1, j+1] - 2*T[i-1,j] + T[i-1, j-1])/dx**2)/prm.C_pl + T[i-1, j]
     return t, x, T
 
-#------------ Euler implicite essai Matthieu --------------------
 def Euler_implicite(prm):
     """Fonction qui utilise la méthode d'Euler implicite pour résoudre 
     l'équation de la fusion d'un matériau en fonction du temps et de x.
@@ -247,61 +246,61 @@ def Euler_implicite(prm):
         - x   : Array de position de taille (N) 1D
         - T   : Array de température de taille (Nt, N) 2D
     """
-    x  = np.linspace(0, prm.L, prm.N)
+    
+    x = np.linspace(0, prm.L, prm.N)
     dx = x[1] - x[0]
-
+    
     dt = 0.99*(prm.rho*prm.C_pl / (2*prm.k))*dx**2
-    Nt = int(prm.t / dt) + 1
+    Nt = int(prm.t/dt) + 1
     t = np.linspace(0, prm.t, Nt)
-
+    
     T = np.empty((Nt, prm.N))
+    
+    N_interieur = prm.N - 2
 
     for j in range(prm.N):
         T[0, j] = prm.T_s
 
-    N_interieur = prm.N - 2
-
     for i in range(1, Nt):
-
+        
+        T[i, 0] = prm.T_c
+        T[i, -1] = prm.T_s
+        
         Cp = np.empty(N_interieur)
+        
         for j in range(N_interieur):
+            
             if T[i-1, j+1] < prm.T_l:
                 Cp[j] = C_psl(prm)
+                
             else:
                 Cp[j] = prm.C_pl
-
+        
         a = np.empty(N_interieur)
+        
         for j in range(N_interieur):
+            
             a[j] = prm.k*dt / (prm.rho*Cp[j]*dx**2)
 
-        diag_sup = np.empty(N_interieur)
-        diag_milieu = np.empty(N_interieur)        
         diag_inf = np.empty(N_interieur)
+        diag_milieu = np.empty(N_interieur)
+        diag_sup = np.empty(N_interieur)
+        
         B = np.empty(N_interieur)
 
         for j in range(N_interieur):
-            diag_sup[j] = -a[j]
-            diag_milieu[j] = 1 + 2*a[j]            
             diag_inf[j] = -a[j]
+            diag_milieu[j] = 1 + 2*a[j]
+            diag_sup[j] = -a[j]
+            
             B[j] = T[i-1, j+1]
 
         B[0] += a[0]*prm.T_c
         B[N_interieur-1] += a[N_interieur-1]*prm.T_s
 
-        for j in range(1, N_interieur):
-            facteur = diag_inf[j] / diag_milieu[j-1]
-            diag_milieu[j] = diag_milieu[j] - facteur*diag_sup[j-1]
-            B[j] = B[j] - facteur*B[j-1]
+        A = np.diag(diag_milieu) + np.diag(diag_inf[1:], -1) + np.diag(diag_sup[:-1], 1)
 
-        T_interieur = np.empty(N_interieur)
-        T_interieur[N_interieur-1] = B[N_interieur-1] / diag_milieu[N_interieur-1]
-        for j in range(N_interieur-2, -1, -1):
-            T_interieur[j] = (B[j] - diag_sup[j]*T_interieur[j+1]) / diag_milieu[j]
-
-        T[i, 0]  = prm.T_c
-        T[i, -1] = prm.T_s
-        for j in range(N_interieur):
-            T[i, j+1] = T_interieur[j]
+        T[i, 1:-1] = np.linalg.solve(A, B)
 
     return t, x, T
 
@@ -340,92 +339,6 @@ def front_evolution(x, t, T, prm):
         x_front_analytique[i] = 2*beta*np.sqrt(alpha*t[i])
     return x_front_analytique, x_front_numerique
 
-#------------ Euler implicite essai Aurélie --------------------
-def euler_implicite(prm): 
-    """Fonction qui utilise la méthode d'Euler implicite pour résoudre l'équation de la fusion d'un matériau en fonction du temps et de x
-    Entrées:
-        - prm : Objet class parametres()
-                - L         : Longueur
-                - T_l       : Température du liquidus(état liquide)
-                - T_s       : Température de solidus(état solide)
-                - T_c       : Température imposée
-                - k         : conductivité thermique
-                - delta_H   : Différence d'enthalpie entre les états solide et liquide
-                - rho       : Masse volumique
-                - Beta      : Paramètre [beta_min, beta_max]
-                - C_pl      : Capacité calorifique à phase liquide               
-                - N         : Nombre de noeuds
-                - t         : Temps total de la simulation
-     Sorties:
-        - t : Array de temps de taille (N) 1D 
-        - x : Array de position de taille (N) 1D
-        - T : Array de température de taille (N,N) 2D, où T[i,j] est la température au temps t[i] et à la position j
-        
-        """
-# Discrétisation spatiale
-    x = np.linspace(0, prm.L, prm.N)
-    dx = x[1] - x[0]
-
-    # Pas de temps (stable mais pas nécessaire en implicite)
-    Stability_value = prm.rho * prm.C_pl / (2 * prm.k)
-    dt = 0.99 * Stability_value * dx**2
-    Nt = int(prm.t / dt)
-    t = np.linspace(0, prm.t, Nt)
-
-    # Initialisation température
-    T = np.empty((Nt, prm.N))
-    T[0, :] = prm.T_s
-    T[0, 0] = prm.T_c
-    T[0, -1] = prm.T_s
-
-    Nint = prm.N - 2  # nombre de noeuds intérieurs
-
-    # Boucle temporelle
-    for n in range(1, Nt):
-
-        T_old = T[n-1, :]
-
-        # Cp pogné au temps précédent
-        Cp = np.zeros(Nint)
-        for j in range(Nint):
-            if T_old[j+1] < prm.T_l:
-                Cp[j] = C_psl(prm)
-            else:
-                Cp[j] = prm.C_pl
-
-        # coefficient diffusion
-        a = prm.k * dt / (prm.rho * Cp * dx**2)
-
-        # Construction matrice A et vecteur b
-        A = np.zeros((Nint, Nint))
-        b = np.zeros(Nint)
-
-        for j in range(Nint):
-
-            A[j, j] = 1 + 2*a[j]
-
-            if j > 0:
-                A[j, j-1] = -a[j]
-
-            if j < Nint - 1:
-                A[j, j+1] = -a[j]
-
-            b[j] = T_old[j+1]
-
-        # Conditions limites
-        b[0] += a[0] * prm.T_c
-        b[-1] += a[-1] * prm.T_s
-
-        T_new_int = np.linalg.solve(A, b)
-
-        T[n, 0] = prm.T_c
-        T[n, -1] = prm.T_s
-        T[n, 1:-1] = T_new_int
-
-    return t, x, T
-
-
-        
 #fonction pour calculer le résidus 
 #Setup du CP
 def cp_effectif_array(T_line, prm):
