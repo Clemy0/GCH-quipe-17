@@ -204,27 +204,29 @@ def Euler_explicite(prm, stability_value = 0.5):
     dt = (stability_value*prm.C_pl*prm.rho*dx**2)/prm.k
     Nt = int(prm.t/dt)
     t = np.linspace(0, prm.t, Nt)
+
+    T = np.zeros((Nt, prm.N))
     
-    T = np.empty((Nt, prm.N))
-    
-    print(dx,dt)
-        
     for i in range(Nt):
-        for j in range(prm.N):
-            if i == 0:
-                T[i,j] = prm.T_s
-            else:
+        if i == 0:
+            T[i,:] = prm.T_s
+        else:
+            A = np.zeros((prm.N, prm.N))
+            b = np.zeros(prm.N).T
+            for j in range(prm.N):
+                A[j,j] = 1 
                 if j == 0:
-                    T[i,j] = prm.T_c
+                    b[j] = prm.T_c
                 elif j == prm.N - 1:
-                    T[i,j] = prm.T_s
+                    b[j] = prm.T_s
                 elif T[i-1, j] < prm.T_l:
-                    T[i,j] = (dt*(prm.k/(C_psl(prm)*prm.rho))*(T[i-1, j+1] - 2*T[i-1,j] + T[i-1, j-1])/dx**2) + T[i-1, j]
+                    b[j] = (dt*(prm.k/(C_psl(prm)*prm.rho))*(T[i-1, j+1] - 2*T[i-1,j] + T[i-1, j-1])/dx**2) + T[i-1, j]
                 else:
-                    T[i,j] = (dt*(prm.k/prm.rho)*(T[i-1, j+1] - 2*T[i-1,j] + T[i-1, j-1])/dx**2)/prm.C_pl + T[i-1, j]
+                    b[j] = (dt*(prm.k/prm.rho)*(T[i-1, j+1] - 2*T[i-1,j] + T[i-1, j-1])/dx**2)/prm.C_pl + T[i-1, j]            
+            T[i,:] = np.linalg.solve(A, b)
     return t, x, T
 
-def Euler_implicite(prm):
+def Euler_implicite(prm, fake_stability_value = 0.5):
     """Fonction qui utilise la méthode d'Euler implicite pour résoudre 
     l'équation de la fusion d'un matériau en fonction du temps et de x.
     
@@ -248,10 +250,10 @@ def Euler_implicite(prm):
     """
     
     x = np.linspace(0, prm.L, prm.N)
-    dx = x[1] - x[0]
+    dx = x[1]- x[0]
     
-    dt = 0.99*(prm.rho*prm.C_pl / (2*prm.k))*dx**2
-    Nt = int(prm.t/dt) + 1
+    dt = (fake_stability_value*prm.C_pl*prm.rho*dx**2)/prm.k
+    Nt = int(prm.t/dt)
     t = np.linspace(0, prm.t, Nt)
     
     T = np.empty((Nt, prm.N))

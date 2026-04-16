@@ -4,7 +4,7 @@ from fct_FusionMateriau import *
 
 class parametres():
     L = 1                                           # Longueur
-    T_l = 0.01                                      # Température du liquidus(état liquide)
+    T_l = 0.000000000001                                      # Température du liquidus(état liquide)
     T_s = 0                                         # Température de solidus(état solide)
     T_c = 1                                         # Température imposée
     k = 10                                          # conductivité thermique
@@ -35,6 +35,8 @@ beta, f = funcbetaArray(prm)
 beta_0 = bissection(prm.Beta[0],prm.Beta[1],prm)
 print(beta_0)
 t,x,T_Euler_explicite = Euler_explicite(prm)
+t_implicite,x_implicite,T_implicite = Euler_implicite(prm, fake_stability_value=0.5) 
+
 t_instable, x_instable, T_Euler_explicite_instable =  Euler_explicite(prm, 0.6) 
 T_euler_explicite_Ste01 = Euler_explicite(prm1)[2]
 T_euler_explicite_Ste001 = Euler_explicite(prm2)[2]
@@ -63,15 +65,15 @@ plt.plot(np.linspace(0,1,100),np.zeros(100), color = "black", linestyle = "dotte
 plt.xlabel(r'$\beta$')
 plt.ylabel(r'f($\beta$)')
 
-#Test
 plt.xlim(left = -0.25)
 plt.grid()
 plt.legend()
 
 #Comparaison analytique + Numérique, il manque Euler implicite
 plt.figure(2)
-plt.plot(x, T_Euler_explicite[len(t)-1,:], label='T(x) à t=50s')
-plt.plot(x, T_theo[len(t)-1,:], label='T(x) à t=50s')
+plt.plot(x, T_Euler_explicite[len(t)-1,:], label='T(x) explicite à t=50s')
+plt.plot(x_implicite, T_implicite[len(t_implicite)-1,:], label='T(x) implicite à t=50s')
+plt.plot(x, T_theo[len(t)-1,:], label='T(x) théorique à t=50s')
 plt.xlabel('x')
 plt.ylabel('T')
 plt.title('Température en fonction de la position')
@@ -100,6 +102,7 @@ plt.grid()
 plt.legend()
 #Stabilité du schéma d'Euler explicite, on voit que pour S = 0.6 > 0.5, la température devient instable à t=50s alors que pour S = 0.5, la température est stable à t=50s
 plt.figure(5)
+plt.plot(x, T_theo[len(t)-1,:], label='T(x) théorique à t=50s')
 plt.plot(x, T_Euler_explicite[len(t)-1,:], label='S = 0.5, T(x) stable à t=50s')
 plt.plot(x_instable, T_Euler_explicite_instable[len(t_instable)-1,:], label='S = 0.6 > 0.5, T(x) à t=50s')
 plt.xlabel('x')
@@ -107,14 +110,14 @@ plt.ylabel('T')
 plt.title('Température en fonction de la position pour différente valeur de stabilité')
 plt.grid()
 plt.legend()
-plt.show()
+#plt.show()
 
 ''' Plot pour les résidus '''
 # Solution explicite
 t_exp, x_exp, T_exp = Euler_explicite(prm)
 
 # Solution implicite
-t_imp, x_imp, T_imp = euler_implicite(prm)
+t_imp, x_imp, T_imp = Euler_implicite(prm, fake_stability_value=0.5)
 
 # Résidus
 R_exp, res_exp = residus_explicite(t_exp, x_exp, T_exp, prm)
