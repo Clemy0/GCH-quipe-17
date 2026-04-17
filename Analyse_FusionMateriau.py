@@ -40,6 +40,7 @@ t_explicite,x_explicite,T_Euler_explicite           = Euler_explicite(prm)
 t_instable, x_instable, T_Euler_explicite_instable  = Euler_explicite(prm, 0.6) 
 
 t_implicite,x_implicite,T_implicite                 = Euler_implicite(prm) 
+t_instable_imp, x_instable_imp, T_implicite_instable = Euler_implicite(prm, S=0.6)
 
 t_theo, x_theo = t_explicite, x_explicite
 T_theo = func_T(t_theo, x_theo, prm)
@@ -109,11 +110,24 @@ plt.ylabel('x_front')
 plt.title('Évolution du front de fusion')
 plt.grid()
 plt.legend()
+
 #Stabilité du schéma d'Euler explicite, on voit que pour S = 0.6 > 0.5, la température devient instable à t=50s alors que pour S = 0.5, la température est stable à t=50s
 plt.figure(5)
 plt.plot(x_theo,      T_theo[len(t_theo)-1,:], label='T(x) théorique à t=50s')
 plt.plot(x_explicite, T_Euler_explicite[len(t_explicite)-1,:], label='S = 0.5, T(x) stable à t=50s')
 plt.plot(x_instable,  T_Euler_explicite_instable[len(t_instable)-1,:], label='S = 0.6 > 0.5, T(x) à t=50s')
+plt.xlabel('x')
+plt.ylabel('T')
+plt.title('Température en fonction de la position pour différente valeur de stabilité')
+plt.grid()
+plt.legend()
+#plt.show()
+
+#Stabilité du schéma d'Euler implicite, on voit ici que même lorsque S = 0.6 > 0.5, la température reste stable à t=50s.
+plt.figure(4)
+plt.plot(x_theo,      T_theo[len(t_theo)-1,:], label='T(x) théorique à t=50s')
+plt.plot(x_implicite, T_implicite[len(t_implicite)-1,:], label='S = 0.5, T(x) stable à t=50s')
+plt.plot(x_instable_imp,  T_implicite_instable[len(t_instable_imp)-1,:],  label='S = 0.6 > 0.5, T(x) à t=50s')
 plt.xlabel('x')
 plt.ylabel('T')
 plt.title('Température en fonction de la position pour différente valeur de stabilité')
