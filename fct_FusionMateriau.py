@@ -177,7 +177,7 @@ def func_T(x,t, prm):
 
 
 
-def Euler_explicite(prm, stability_value = 0.5): 
+def Euler_explicite(prm, S = 0.5): 
     """Fonction qui utilise la méthode d'Euler explicite pour résoudre l'équation de la fusion d'un matériau en fonction du temps et de x
     Entrées:
         - prm : Objet class parametres()
@@ -201,7 +201,7 @@ def Euler_explicite(prm, stability_value = 0.5):
     x = np.linspace(0, prm.L, prm.N)
     dx = x[1]- x[0]
     
-    dt = (stability_value*prm.C_pl*prm.rho*dx**2)/prm.k
+    dt = (S*prm.C_pl*prm.rho*dx**2)/prm.k
     Nt = int(prm.t/dt)
     t = np.linspace(0, prm.t, Nt)
 
@@ -226,7 +226,7 @@ def Euler_explicite(prm, stability_value = 0.5):
             T[i,:] = np.linalg.solve(A, b)
     return t, x, T
 
-def Euler_implicite(prm, fake_stability_value = 0.5):
+def Euler_implicite(prm, S = 0.5):
     """Fonction qui utilise la méthode d'Euler implicite pour résoudre 
     l'équation de la fusion d'un matériau en fonction du temps et de x.
     
@@ -252,7 +252,7 @@ def Euler_implicite(prm, fake_stability_value = 0.5):
     x = np.linspace(0, prm.L, prm.N)
     dx = x[1]- x[0]
     
-    dt = (fake_stability_value*prm.C_pl*prm.rho*dx**2)/prm.k
+    dt = (S*prm.C_pl*prm.rho*dx**2)/prm.k
     Nt = int(prm.t/dt)
     t = np.linspace(0, prm.t, Nt)
     
@@ -354,6 +354,36 @@ def cp_effectif_array(T_line, prm):
             
     return Cp
 
+
+
+def erreur_Norme(t, T_analytique, T_numerique):
+    Nt = len(t)
+    N_T = T_analytique.shape[1]
+    dt = t[1] - t[0]
+    erreurT = np.empty(Nt)
+    for i in range(Nt):
+        erreurT[i] = np.linalg.norm(T_analytique[i,:] - T_numerique[i,:])/N_T
+    erreur = np.linalg.norm(erreurT)/Nt
+    return dt, erreur
+
+def array_dt_erreur(prm, schema = "explicite"):
+    S = np.linspace(0.1,0.5, 25)
+    dt_array = np.empty(len(S))
+    erreur_array = np.empty(len(S))
+    for i in range(len(S)):
+        if schema == "explicite":
+            t, x, T_numerique = Euler_explicite(prm, S[i])
+
+            T_analytique = func_T(x, t, prm)
+            dt_array[i], erreur_array[i] = erreur_Norme(t, T_analytique, T_numerique)
+        elif schema == "implicite":
+            t, x, T_numerique = Euler_implicite(prm, S[i])
+
+            T_analytique = func_T(x, t, prm)
+            dt_array[i], erreur_array[i] = erreur_Norme(t, T_analytique, T_numerique)
+        else:
+            return "Schema non reconnu, veuillez choisir entre 'explicite' et 'implicite'"
+    return dt_array, erreur_array
 
 def residus_explicite(t, x, T, prm):
    

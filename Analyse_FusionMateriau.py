@@ -35,7 +35,7 @@ beta, f = funcbetaArray(prm)
 beta_0 = bissection(prm.Beta[0],prm.Beta[1],prm)
 print(beta_0)
 t,x,T_Euler_explicite = Euler_explicite(prm)
-t_implicite,x_implicite,T_implicite = Euler_implicite(prm, fake_stability_value=0.5) 
+t_implicite,x_implicite,T_implicite = Euler_implicite(prm) 
 
 t_instable, x_instable, T_Euler_explicite_instable =  Euler_explicite(prm, 0.6) 
 T_euler_explicite_Ste01 = Euler_explicite(prm1)[2]
@@ -45,7 +45,7 @@ T_euler_explicite_Ste0001 = Euler_explicite(prm3)[2]
 T_theo = func_T(x,t,prm)
 
 x_front_analytique, x_front_numérique = front_evolution(x, t, T_Euler_explicite, prm)
-
+x_front_implicite = front_evolution(x_implicite, t_implicite, T_implicite, prm)[1]
 #Graphique pour déterminer l'intervalle de valeur initiale pour trouver beta avec la méthode bissection
 plt.figure(1)
 plt.plot(beta, f, label= r'f($\beta$)')
@@ -93,6 +93,7 @@ plt.legend()
 
 #Comparaison du front de fusion trouver analytiquement et numériquement
 plt.figure(4)
+plt.plot(t_implicite, x_front_implicite, label='Front de fusion implicite en fonction du temps')
 plt.plot(t, x_front_analytique, label='Front de fusion analytique en fonction du temps')
 plt.plot(t, x_front_numérique, label='Front de fusion numérique en fonction du temps')
 plt.xlabel('t')
@@ -112,19 +113,32 @@ plt.grid()
 plt.legend()
 #plt.show()
 
+dt , erreur = array_dt_erreur(prm, schema="explicite")
+plt.figure(6)
+plt.loglog(dt , erreur, label='Erreur')
+plt.xlabel('x')
+plt.ylabel('T')
+plt.title('Erreur en fonction de dt pour le schéma explicite')
+plt.grid()
+plt.legend()
+
+
+
+
+
 ''' Plot pour les résidus '''
 # Solution explicite
 t_exp, x_exp, T_exp = Euler_explicite(prm)
 
 # Solution implicite
-t_imp, x_imp, T_imp = Euler_implicite(prm, fake_stability_value=0.5)
+t_imp, x_imp, T_imp = Euler_implicite(prm)
 
 # Résidus
 R_exp, res_exp = residus_explicite(t_exp, x_exp, T_exp, prm)
 R_imp, res_imp = residus_implicite(t_imp, x_imp, T_imp, prm)
 
 #résidu explicite
-plt.figure(6)
+plt.figure(7)
 plt.semilogy(t_exp[1:], res_exp, label="Euler explicite")
 plt.xlabel("temps")
 plt.ylabel("résidu")
@@ -133,8 +147,8 @@ plt.grid(True)
 plt.legend()
 
 #résidu implicite
-plt.figure(7)
-plt.semilogy(t_imp[1:], res_imp, label="Euler implicite")
+plt.figure(8)
+plt.loglog(t_imp[1:], res_imp, label="Euler implicite")
 plt.xlabel("temps")
 plt.ylabel("résidu")
 plt.title("Résidu du schéma implicite")
@@ -142,7 +156,7 @@ plt.grid(True)
 plt.legend()
 
 # Comparaison
-plt.figure(8)
+plt.figure(9)
 plt.semilogy(t_exp[1:], res_exp, label="Explicite")
 plt.semilogy(t_imp[1:], res_imp, label="Implicite")
 plt.xlabel("temps")
